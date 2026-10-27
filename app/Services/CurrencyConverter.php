@@ -10,6 +10,6 @@ class CurrencyConverter{
             throw new InvalidArgumentException('Tasa de cambio inválida');
         }
         $converted=(float)$amount/(float)$from->exchange_rate*(float)$to->exchange_rate;
-        return number_format($converted,2,',','.');
+        return number_format($converted,2,'.','');
     }
 }
