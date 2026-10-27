@@ -19,7 +19,7 @@ class ProductResource extends JsonResource{
             'description'=>$this->description,
             'price'=>$this->price,
             'currency_id'=>$this->currency_id,
-            'currency'=> new CurrencyResource(),
+            'currency'=> new CurrencyResource('currency'),
             'tax_cost'=>$this->tax_cost,
             'manufacturing_cost'=>$this->manufacturing_cost,
             'prices'=> ProductPriceResource::collection('prices'),
