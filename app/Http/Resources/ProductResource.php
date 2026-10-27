@@ -19,12 +19,12 @@ class ProductResource extends JsonResource{
             'description'=>$this->description,
             'price'=>$this->price,
             'currency_id'=>$this->currency_id,
-            'currency'=> new CurrencyResource('currency'),
+            'currency'=> new CurrencyResource($this->whenLoaded('currency')),
             'tax_cost'=>$this->tax_cost,
             'manufacturing_cost'=>$this->manufacturing_cost,
-            'prices'=> ProductPriceResource::collection('prices'),
-            'created_at'=>$this->created_at,
-            'updated_at'=>$this->updated_at,
+            'prices'=> ProductPriceResource::collection($this->whenLoaded('prices')),
+            'created_at'=>$this->created_at?->toIso8601String(),
+            'updated_at'=>$this->updated_at?->toIso8601String(),
         ];
     }
 }

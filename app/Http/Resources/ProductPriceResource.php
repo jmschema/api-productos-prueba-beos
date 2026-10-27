@@ -15,9 +15,9 @@ class ProductPriceResource extends JsonResource{
         return[
             'id'=>$this->id,
             'product_id'=>$this->product_id,
-            'currency'=> new CurrencyResource('currency'),
+            'currency'=> new CurrencyResource($this->whenLoaded('currency')),
             'price'=>$this->price,
-            'created_at'=>$this->created_at
+            'created_at'=>$this->created_at?->toIso8601String()
         ];
     }
 }
