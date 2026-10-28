@@ -1,58 +1,158 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# API de Productos
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API RESTful desarrollada en Laravel para gestionar productos y sus precios en distintas divisas.
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.3+ / Laravel 13
+- Eloquent ORM con SQLite (compatible con MySQL)
+- Laravel Sanctum (autenticación por tokens)
+- PHPUnit (tests unitarios y de feature)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Instalación
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/jmschema/api-productos-prueba-beos.git
+cd api-productos-prueba-beos
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Si la base SQLite no existe, Laravel ofrecerá crearla al migrar. La API queda disponible en `http://127.0.0.1:8000/api`.
 
-## Contributing
+El seeder crea las divisas USD, CLP, EUR y MXN, 10 productos de ejemplo y un usuario de prueba:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Email | Contraseña |
+|---|---|
+| test@example.com | password |
 
-## Code of Conduct
+## Autenticación
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. Obtener un token con `POST /api/login`.
+2. Enviarlo en cada request: `Authorization: Bearer {token}`.
+3. Todas las requests deben incluir `Accept: application/json`.
 
-## Security Vulnerabilities
+Los tokens expiran a las 24 horas.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Endpoints
 
-## License
+| Método | Ruta | Descripción | Auth |
+|---|---|---|---|
+| POST | `/api/login` | Obtener token | No |
+| POST | `/api/logout` | Revocar el token actual | Sí |
+| GET | `/api/products` | Listar productos (paginado) | Sí |
+| POST | `/api/products` | Crear producto | Sí |
+| GET | `/api/products/{id}` | Ver producto con su divisa y precios | Sí |
+| PUT | `/api/products/{id}` | Actualizar producto (parcial) | Sí |
+| DELETE | `/api/products/{id}` | Eliminar producto (soft delete) | Sí |
+| GET | `/api/products/{id}/prices` | Listar precios del producto | Sí |
+| POST | `/api/products/{id}/prices` | Registrar precio en otra divisa | Sí |
+| GET | `/api/currencies` | Listar divisas disponibles | Sí |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+`GET /api/products` acepta `?per_page=` (máximo 100) y `?page=`.
+
+### Ejemplo: crear producto
+
+```http
+POST /api/products
+```
+
+```json
+{
+    "name": "Silla ergonómica",
+    "description": "Silla de oficina con soporte lumbar",
+    "price": 150.00,
+    "currency_id": 1,
+    "tax_cost": 28.50,
+    "manufacturing_cost": 60.00
+}
+```
+
+Respuesta `201 Created`:
+
+```json
+{
+    "data": {
+        "id": 11,
+        "name": "Silla ergonómica",
+        "description": "Silla de oficina con soporte lumbar",
+        "price": "150.00",
+        "currency_id": 1,
+        "currency": { "id": 1, "name": "USD", "symbol": "$", "exchange_rate": "1.000000" },
+        "tax_cost": "28.50",
+        "manufacturing_cost": "60.00",
+        "created_at": "2026-10-27T22:00:00+00:00",
+        "updated_at": "2026-10-27T22:00:00+00:00"
+    }
+}
+```
+
+### Ejemplo: registrar precio en otra divisa
+
+```http
+POST /api/products/11/prices
+```
+
+```json
+{ "currency_id": 2, "price": 145000 }
+```
+
+Si se omite `price`, se calcula automáticamente desde el precio base usando las tasas de cambio:
+
+```json
+{ "currency_id": 2 }
+```
+
+## Códigos de respuesta
+
+| Código | Significado |
+|---|---|
+| 200 | OK |
+| 201 | Recurso creado |
+| 204 | Eliminado / sin contenido |
+| 401 | No autenticado o credenciales inválidas |
+| 404 | Recurso no encontrado |
+| 422 | Error de validación (detalle por campo en `errors`) |
+| 429 | Demasiadas requests |
+
+## Decisiones de diseño
+
+- **Divisa base vs. precios adicionales:** el precio base vive en `products` (`price` + `currency_id`); la tabla `product_prices` guarda los precios en otras divisas. No se permite registrar un precio adicional en la divisa base ni dos precios en la misma divisa.
+- **Tasas de cambio:** `exchange_rate` representa las unidades de la divisa por 1 USD. La conversión está aislada en `App\Services\CurrencyConverter`.
+- **Montos:** columnas `decimal` (no `float`) para evitar errores de redondeo; se devuelven como string para no perder precisión.
+- **Soft deletes** en productos para conservar historial.
+- **`GET /api/currencies`:** endpoint adicional para que el cliente conozca los `currency_id` válidos.
+
+## Seguridad
+
+- Autenticación con tokens de Sanctum (almacenados como hash) con expiración.
+- Rate limiting: 60 req/min por usuario y 5 intentos de login por minuto por IP.
+- Validación con Form Requests y protección contra mass assignment (`$fillable`).
+- Mensaje genérico de login para evitar enumeración de usuarios.
+- Errores siempre en JSON y sin detalles internos. En producción usar `APP_DEBUG=false`.
+
+## Estructura
+
+```
+app/
+├── Http/Controllers/Api/   Controladores delgados
+├── Http/Requests/          Validación
+├── Http/Resources/         Transformación a JSON
+├── Models/                 Modelos Eloquent y relaciones
+└── Services/               Lógica de negocio (conversión de divisas)
+```
+
+## Tests
+
+```bash
+php artisan test
+```
+
+Incluye tests unitarios del conversor de divisas y tests de feature para autenticación, CRUD de productos, precios, validaciones y errores.
+
+## Documentación
+
+Colección de Postman en `docs/Prueba-de-Api-de-Productos-Beos.postman_collection.json`. Al importarla, ajustar la variable `base_url`. La request **Login** guarda el token automáticamente.
